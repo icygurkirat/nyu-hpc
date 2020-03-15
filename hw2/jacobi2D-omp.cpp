@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include "utils.h"
 #include <math.h>
+
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #define NUM_ITERATIONS 5000
 #define NORM_THRESHOLD 1000000
@@ -41,10 +44,12 @@ int main(int argc, char** argv){
 	if(argc >= 2)
 		N = atoi(argv[1]);
     
+	#ifdef _OPENMP
     if(argc >= 3) {
         int numThreads = atoi(argv[2]);
         omp_set_num_threads(numThreads);
     }
+	#endif
 
 	double *u = (double*)malloc((N+2) * (N+2) * sizeof(double));
 	double *u_temp = (double*)malloc((N+2) * (N+2) * sizeof(double));	// to store temporary vaues when running iterations

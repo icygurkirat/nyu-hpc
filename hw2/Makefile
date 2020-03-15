@@ -1,10 +1,13 @@
-all: test1 test2 ompbugs jacobi
+all: test1 test2 ompbugs jacobi gauss mmult
 
 test1:
 	g++ -g -std=c++11 -o val_test01_solved val_test01_solved.cpp
 
 test2:
 	g++ -g -std=c++11 -o val_test02_solved val_test02_solved.cpp
+
+mmult:
+	g++ -fopenmp -O2 -march=native MMult1.cpp -o MMult1
 
 ompbugs:
 	g++ -std=c++11 -o omp_solved2 omp_solved2.c -fopenmp
@@ -20,6 +23,7 @@ gauss:
 	g++ -std=c++11 -o gs2D-omp gs2D-omp.cpp -fopenmp
 
 clean:
+	rm -rf MMult1
 	rm -rf jacobi2D-omp
 	rm -rf gs2D-omp
 	rm -rf val_test01_solved
