@@ -9,6 +9,9 @@ test2:
 mmult:
 	g++ -fopenmp -O2 -march=native MMult1.cpp -o MMult1
 
+mmult-seq:
+	g++ -O2 -march=native MMult1.cpp -o MMult1
+
 ompbugs:
 	g++ -std=c++11 -o omp_solved2 omp_solved2.c -fopenmp
 	g++ -std=c++11 -o omp_solved3 omp_solved3.c -fopenmp

@@ -2,10 +2,14 @@
 
 #include <stdio.h>
 #include <math.h>
+
+#ifdef _OPENMP
 #include <omp.h>
+#endif
+
 #include "utils.h"
 
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 8
 
 // Note: matrices are stored in column major order; i.e. the array elements in
 // the (m x n) matrix C are stored in the sequence: {C_00, C_10, ..., C_m0,
@@ -71,7 +75,14 @@ int main(int argc, char** argv) {
   const long PLAST = 2000;
   const long PINC = std::max(50/BLOCK_SIZE,1) * BLOCK_SIZE; // multiple of BLOCK_SIZE
 
-  printf(" Dimension       Time    Gflop/s       GB/s        Error\n");
+  #ifdef _OPENMP
+    if(argc >= 2) {
+        int numThreads = atoi(argv[1]);
+        omp_set_num_threads(numThreads);
+    }
+	#endif
+
+  printf(" Dimension       Time    Gflop/s       GB/s        Error      NREPEATS\n");
   for (long p = PFIRST; p < PLAST; p += PINC) {
     long m = p, n = p, k = p;
     long NREPEATS = 1e9/(m*n*k)+1;
@@ -102,7 +113,7 @@ int main(int argc, char** argv) {
 
     double max_err = 0;
     for (long i = 0; i < m*n; i++) max_err = std::max(max_err, fabs(c[i] - c_ref[i]));
-    printf(" %10e\n", max_err);
+    printf(" %10e    %10ld\n", max_err, NREPEATS);
 
     aligned_free(a);
     aligned_free(b);
