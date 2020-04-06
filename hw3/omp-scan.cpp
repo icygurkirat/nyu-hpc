@@ -16,14 +16,14 @@ void scan_seq(long* prefix_sum, const long* A, long n) {
 void scan_omp(long* prefix_sum, const long* A, long n) {
   #pragma omp parallel
   {
-    int tid = omp_get_thread_num(), p = omp_get_num_threads(), len = n/p;
+    int tid = omp_get_thread_num(), p = omp_get_num_threads();
     
     //indices for local section
-    int i = tid * len, j = (tid == p-1)?(n-1):(i+len-1);
+    long len = n/p, i = tid * len, j = (tid == p-1)?(n-1):(i+len-1);
 
     //find local sum
     long sum = (i==0?0:A[i-1]);
-    for(int ii = i+1; ii <= j; ii++)
+    for(long ii = i+1; ii <= j; ii++)
       sum += A[ii-1];
     
     //store this sum in global array
@@ -32,14 +32,14 @@ void scan_omp(long* prefix_sum, const long* A, long n) {
     #pragma omp barrier
 
     sum = 0;
-    for(int ii = 0; ii < tid; ii++)
+    for(long ii = 0; ii < tid; ii++)
       sum += prefix_sum[ii*len];
 
     #pragma omp barrier
 
     //add this additional sum
     prefix_sum[i] = sum + (i==0?0:A[i-1]);
-    for(int ii = i+1; ii <= j; ii++)
+    for(long ii = i+1; ii <= j; ii++)
       prefix_sum[ii] = prefix_sum[ii-1] + A[ii-1];
 
   }

@@ -53,3 +53,16 @@ Theory behind my approach:-
 
 
 Problem-3:
+Compiler - gcc 7.4.0
+Processor - Intel i7-6700HQ @ 2.6GHz . 4 cores with hyperthreading.
+Comparing execution times of sequential scan and parallel scan using 1,2,4,8 threads
+
+N               sequential-scan     openmp-1        openmp-2        openmp-4        openmp-8
+10000000        0.113072s           0.124446s       0.094253s       0.086056s       0.150756s
+50000000        0.575568s           0.598927s       0.385340s       0.391583s       0.678740s    
+100000000       1.146597s           1.252010s       0.726653s       0.772436s       1.383955s 
+200000000       2.500063s           2.659607s       1.492905s       1.495254s       2.558493s
+400000000       4.462819s           4.635113s       3.106056s       2.948160s       5.084091s
+
+The insufficient scaling observed can be due to the fact that there will be a lot of page faults happening when each thread will be writing the data to prefix_sum array.
+This array is being initialized directly within the scan functions and this initialization will occupy a huge part of this execution time.
