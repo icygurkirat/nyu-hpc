@@ -1,0 +1,55 @@
+Compiler - gcc 7.4.0
+Processor - Intel i7-6700HQ @ 2.6GHz . 4 cores with hyperthreading.
+
+Problem-2:
+a) Added more terms to sin4_vector which improved the accuracy of the algorithm. The final results of the simulation are as follows
+Reference time: 15.4440
+Taylor time:    2.1385      Error: 6.928125e-12
+Intrin time:    1.1182      Error: 2.454130e-03
+Vector time:    1.1896      Error: 6.928125e-12
+
+
+
+Extra-credit) sin4_taylor() represents my code which solves for sin() using Taylor series for any values of x. The sin4_taylor_original() is the original taylor function.
+Simulation results for running the program on the given data are as follows: 
+Reference time: 15.6353
+Taylor time:    6.7161      Error: 6.928125e-12
+Intrin time:    1.1228      Error: 2.454130e-03
+Vector time:    1.1930      Error: 6.928125e-12
+
+
+To validate the correctness, I also ran the program for values of x in range [-50,50] by changing rand multiplier. The simulation results are as follows:
+Reference time: 24.5898
+Taylor time:    18.5691      Error: 1.146205e-10
+Intrin time:    1.0593      Error: 2.078307e+04
+Vector time:    1.1534      Error: 1.170949e+11
+
+
+In both the cases my program is more efficient than reference sin() function, but it is less efficient than original sin4_taylor() because of additional floating point arithmetic and branching.
+Theory behind my approach:-
+1. We should attempt to reduce the domain of x from R to [-pi/2,pi/2]
+2. Due to symmetry of sin() function we know that:
+   sin(x) = sin(x)      if x is in range [-pi/2, pi,2]
+   sin(x) = sin(pi-x)   if x is in range [pi/2, 3*pi/2]
+   sin(x) = sin(x-2*pi) if x is in range [3*pi/2, 5*pi/2]
+   sin(x) = sin(3*pi - x) if x is in range [5*pi/2, 7*pi/2]
+
+   We can use this info for our domain reduction. 
+3. We find an n*pi which is nearest to x. n here is an integer. If this n comes out to be even, then sin(x) = sin(x-n*pi), else sin(x) = sin(n*pi-x)
+4. To avoid branching I wrote this if-else in a slightly different way that uses bit-manipulation to get the same result (line 66)
+5. Now we have reduced x to [-pi/2, pi/2]. We have to further reduce it to allow for truncated taylor series solution.
+6. If x is in [-pi/4, pi/4]   ->  find sin(x) using truncated taylor series for sine
+   If x>pi/4  ->  sin(x) = cos(x-pi/2)
+   If x<pi/4  ->  sin(x) = -cos(-x-pi/2)
+   This is inferred from e^(i(x+pi/2)) = i*e^x
+7. Now the domains for cos() are also in [-pi/4,pi/4] which means we can use Taylor expansion. Using e^(ix) = cosx + i*sinx, we get
+   cos(x) = 1 - x^2/2! + x^4/4! - x^6/6! + x^8/8! - x^10/10! + ...
+
+
+
+
+
+
+
+
+Problem-3:
