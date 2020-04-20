@@ -1,4 +1,13 @@
-1. refer file: mmultvector.cu
+1a  vector-vector multiplication: mmultvector.cu
+    It uses 2 kernels: 
+    product_kernel() to get index-by-index product of two vectors
+    reduction_kernel() to do the reduction addition operation. It is run repeatedly until blockSize is 1.
+
+
+1b  matrix-vector multiplication: mmult.cu
+    It uses 2 kernels which are directly based on mmultvector: 
+    product_kernel() to get index-by-index product of matrix and a vector. But it runs in 2D blocks of size 32x32
+    reduction_kernel() to do the row-wise reduction addition operation. Instead of using 1D blocks of size Nb, it is run using grid of size (N, Nb) for row-wise reduction. The kernel is run repeatedly until blockSize.y is 1.
 
 
 
