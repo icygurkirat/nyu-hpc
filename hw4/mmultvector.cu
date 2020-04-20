@@ -4,10 +4,10 @@
 
 #define BLOCK_SIZE 1024
 
-__global__ void product_kernel(double* x, double* y, double* prod, long N) {
+__global__ void product_kernel(double* x, double* y, long N) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < N)
-        prod[idx] = x[idx] * y[idx];
+        x[idx] = x[idx] * y[idx];
 }
 
 __global__ void reduction_kernel(double* a, double* sum, long N){
@@ -32,7 +32,7 @@ int main() {
     Timer tt;
     long N = 10000000;
 
-    double *h_x, *d_x, *h_y, *d_y, *d_prod, *d_sum;
+    double *h_x, *d_x, *h_y, *d_y, *d_sum;
     h_x = (double*)malloc(N * sizeof(double));
     h_y = (double*)malloc(N * sizeof(double));
     double cpu_ans = 0;
@@ -52,26 +52,25 @@ int main() {
     long Nb = (N+BLOCK_SIZE-1)/(BLOCK_SIZE);
     cudaMalloc(&d_x, N * sizeof(double));
     cudaMalloc(&d_y, N * sizeof(double));
-    cudaMalloc(&d_prod, N * sizeof(double));
     cudaMalloc(&d_sum, Nb * sizeof(double));
     cudaMemcpy(d_x, h_x, N*sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_y, h_y, N*sizeof(double), cudaMemcpyHostToDevice);
-    product_kernel<<<Nb, BLOCK_SIZE>>>(d_x, d_y, d_prod, N);
+    product_kernel<<<Nb, BLOCK_SIZE>>>(d_x, d_y, N);
 
     //begin reduction
     long N2 = N;
     bool flip = false;
     while (N2  > 1) {
         if(flip)
-            reduction_kernel<<<Nb,BLOCK_SIZE>>>(d_sum, d_prod, N2);
+            reduction_kernel<<<Nb,BLOCK_SIZE>>>(d_sum, d_x, N2);
         else
-            reduction_kernel<<<Nb,BLOCK_SIZE>>>(d_prod, d_sum, N2);
+            reduction_kernel<<<Nb,BLOCK_SIZE>>>(d_x, d_sum, N2);
         N2 = Nb;
         Nb = (Nb+BLOCK_SIZE-1)/(BLOCK_SIZE);
         flip = !flip;
     }
     double gpu_ans;
-    cudaMemcpy(&gpu_ans, flip?d_sum:d_prod, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&gpu_ans, flip?d_sum:d_sum, sizeof(double), cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
     double time = tt.toc();
     cudaError_t error = cudaGetLastError();
