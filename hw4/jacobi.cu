@@ -27,7 +27,6 @@ __global__ void jacobi_kernel(double* u, double* u_temp, double* f, int N) {
     double h_rev = (N + 1) * (N + 1);
     if(i < N && j < N)
         u_temp[index(i,j,N)] = (f[index(i,j,N)]/h_rev + 
-                                smem[threadIdx.y+1][threadIdx.x+1] + 
                                 smem[threadIdx.y][threadIdx.x+1] + 
                                 smem[threadIdx.y+1][threadIdx.x] + 
                                 smem[threadIdx.y+2][threadIdx.x+1] + 
