@@ -3,9 +3,13 @@
 
 
 
-2. jacobi-gpu.cu is the implementation of 2D jacobi algorithm in CUDA. I have also provided the jacobi-cpu.cpp file for comparison which contains the implementation using CPU.
+2.  jacobi-gpu.cu is the implementation of 2D jacobi algorithm in CUDA. I have also provided the jacobi-cpu.cpp file for comparison which contains the implementation using CPU.
     The results obtained are exactly indentical.
 
     For doing a jacobi iteration, I am using the kernel: jacobi_kernel(). It applies the convolution and leverages shared memory for faster calculation.
     For calculting norm of difference, I am using two kernels: diff_convolution() and reduction_kernel().
 
+
+3.  I have been doing a reading of the paper "A survey of Parallel Mesh generation methods" to understand the various aspects of tetrahedralization using domain partitioning.
+    I have started the preliminary work on synchronization infra for avoiding race conditions when handling boundary elements. Successfully implemented it on meshes with 2-way boundaries.
+    I am getting some segfaults when boundaries are 3-way, 4-way, etc. Currently debugging those cases.
