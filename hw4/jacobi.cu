@@ -6,27 +6,32 @@
 #define NORM_THRESHOLD 1000000
 #define BLOCK_SIZE 16
 #define BLOCK_SIZE_1D 1024
-#define index(i, j, N)  ((i)*(N+2)) + (j)
+#define index(i, j, N)  ((i)*(N)) + (j)
 
 __global__ void jacobi_kernel(double* u, double* u_temp, double* f, int N) {
     __shared__ double smem[BLOCK_SIZE + 2][BLOCK_SIZE + 2];
     
     int i = blockIdx.y * BLOCK_SIZE + threadIdx.y;
     int j = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-    smem[threadIdx.y + 1][threadIdx.x + 1] = u[index(i, j, N)];
+    smem[threadIdx.y + 1][threadIdx.x + 1] = (i < N && j < N) ? u[index(i, j, N)]: 0;
     if(threadIdx.y == 0)
-        smem[0][threadIdx.x + 1] = (i>=0) ? u[index(i-1, j, N)] : 0;
+        smem[0][threadIdx.x + 1] = (i>0 && i < N && j < N) ? u[index(i-1, j, N)] : 0;
     if(threadIdx.y == BLOCK_SIZE - 1)
-        smem[BLOCK_SIZE + 1][threadIdx.x + 1] = (i < N) ? u[index(i+1,j,N)]: 0;
+        smem[BLOCK_SIZE + 1][threadIdx.x + 1] = (i+1 < N && j < N) ? u[index(i+1,j,N)]: 0;
     if(threadIdx.x == 0)
-        smem[threadIdx.y + 1][0] = (j>=0) ? u[index(i, j-1, N)] : 0;
+        smem[threadIdx.y + 1][0] = (j>0 && j < N && i < N) ? u[index(i, j-1, N)] : 0;
     if(threadIdx.x == BLOCK_SIZE - 1)
-        smem[threadIdx.y + 1][BLOCK_SIZE + 1] = (j < N) ? u[index(i,j+1,N)]: 0;
+        smem[threadIdx.y + 1][BLOCK_SIZE + 1] = (j+1 < N && i < N) ? u[index(i,j+1,N)]: 0;
 
     __syncthreads();
     double h_rev = (N + 1) * (N + 1);
     if(i < N && j < N)
-        u_temp[index(i,j,N)] = (f[index(i,j,N)]/h_rev + smem[i+1][j+1] + smem[i][j+1] + smem[i+1][j] + smem[i+2][j+1] + smem[i+1][j+2])/4.0;
+        u_temp[index(i,j,N)] = (f[index(i,j,N)]/h_rev + 
+                                smem[threadIdx.y+1][threadIdx.x+1] + 
+                                smem[threadIdx.y][threadIdx.x+1] + 
+                                smem[threadIdx.y+1][threadIdx.x] + 
+                                smem[threadIdx.y+2][threadIdx.x+1] + 
+                                smem[threadIdx.y+1][threadIdx.x+2])/4.0;
 }
 
 __global__ void diff_convolution(double* u, double* u_temp, double* f, int N) {
@@ -34,20 +39,24 @@ __global__ void diff_convolution(double* u, double* u_temp, double* f, int N) {
     
     int i = blockIdx.y * BLOCK_SIZE + threadIdx.y;
     int j = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-    smem[threadIdx.y + 1][threadIdx.x + 1] = u[index(i, j, N)];
+    smem[threadIdx.y + 1][threadIdx.x + 1] = (i < N && j < N) ? u[index(i, j, N)]: 0;
     if(threadIdx.y == 0)
-        smem[0][threadIdx.x + 1] = (i>=0) ? u[index(i-1, j, N)] : 0;
+        smem[0][threadIdx.x + 1] = (i>0 && i < N && j < N) ? u[index(i-1, j, N)] : 0;
     if(threadIdx.y == BLOCK_SIZE - 1)
-        smem[BLOCK_SIZE + 1][threadIdx.x + 1] = (i < N) ? u[index(i+1,j,N)]: 0;
+        smem[BLOCK_SIZE + 1][threadIdx.x + 1] = (i+1 < N && j < N) ? u[index(i+1,j,N)]: 0;
     if(threadIdx.x == 0)
-        smem[threadIdx.y + 1][0] = (j>=0) ? u[index(i, j-1, N)] : 0;
+        smem[threadIdx.y + 1][0] = (j>0 && j < N && i < N) ? u[index(i, j-1, N)] : 0;
     if(threadIdx.x == BLOCK_SIZE - 1)
-        smem[threadIdx.y + 1][BLOCK_SIZE + 1] = (j < N) ? u[index(i,j+1,N)]: 0;
+        smem[threadIdx.y + 1][BLOCK_SIZE + 1] = (j+1 < N && i < N) ? u[index(i,j+1,N)]: 0;
 
     __syncthreads();
     double h_rev = (N + 1) * (N + 1);
     if(i < N && j < N) {
-        h_rev = (4 * smem[i+1][j+1] - smem[i][j+1] - smem[i+1][j] - smem[i+2][j+1] - smem[i+1][j+2]) * h_rev;
+        h_rev = (4 * smem[threadIdx.y+1][threadIdx.x+1] - 
+                smem[threadIdx.y][threadIdx.x+1] - 
+                smem[threadIdx.y+1][threadIdx.x] - 
+                smem[threadIdx.y+2][threadIdx.x+1] - 
+                smem[threadIdx.y+1][threadIdx.x+2]) * h_rev;
         h_rev = h_rev - f[index(i,j,N)];
         u_temp[index(i,j,N)] = h_rev*h_rev;
     }
@@ -132,7 +141,7 @@ int main(int argc, char** argv){
     printf("Beginning the simulation...\n\n");
 
 	for(int i = 1; i <= NUM_ITERATIONS; i++) {
-		jacobi(d_u, d_u_temp, f, N);
+		jacobi(d_u, d_u_temp, d_f, N);
 		double* temp = d_u_temp;
 		d_u_temp = d_u;
 		d_u = temp;
