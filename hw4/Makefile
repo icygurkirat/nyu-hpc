@@ -1,10 +1,7 @@
-all: mmultvector mmult jacobi
+all: mmultvector jacobi
 
 mmultvector:
 	nvcc -std=c++11 -o mmultvector mmultvector.cu
-
-mmult:
-	nvcc -std=c++11 -o mmult mmult.cu
 
 jacobi:
 	nvcc -std=c++11 -o jacobi-gpu jacobi-gpu.cu
