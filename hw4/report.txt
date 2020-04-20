@@ -9,6 +9,15 @@
     product_kernel() to get index-by-index product of matrix and a vector. But it runs in 2D blocks of size 32x32
     reduction_kernel() to do the row-wise reduction addition operation. Instead of using 1D blocks of size Nb, it is run using grid of size (N, Nb) for row-wise reduction. The kernel is run repeatedly until blockSize.y is 1.
 
+    Bandwidth obtained for different GPUs and N values. Vector is of length N and matrix is of dimension NXN.
+
+    N               CUDA5               CUDA1               CUDA3            
+    100             0.001116 GB/s       0.001460 GB/s       0.000496 GB/s      
+    1000            0.118342 GB/s       0.144262 GB/s       0.051284 GB/s
+    10000           1.434645 GB/s       3.262320 GB/s       2.165030 GB/s 
+    15000           1.540087 GB/s       3.588722 GB/s       2.459101 GB/s 
+
+    I encountered OUT_OF_MEMORY errors in CUDA2 AND CUDA4 for even very small arrays.
 
 
 2.  jacobi-gpu.cu is the implementation of 2D jacobi algorithm in CUDA. I have also provided the jacobi-cpu.cpp file for comparison which contains the implementation using CPU.
