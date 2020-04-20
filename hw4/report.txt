@@ -1,5 +1,4 @@
-1. vector-vector multiplication: mmultvector.cu
-   matrix-vector multiplication: mmult.cu
+1. refer file: mmultvector.cu
 
 
 
