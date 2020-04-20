@@ -1,0 +1,11 @@
+1. vector-vector multiplication: mmultvector.cu
+   matrix-vector multiplication: mmult.cu
+
+
+
+2. jacobi-gpu.cu is the implementation of 2D jacobi algorithm in CUDA. I have also provided the jacobi-cpu.cpp file for comparison which contains the implementation using CPU.
+    The results obtained are exactly indentical.
+
+    For doing a jacobi iteration, I am using the kernel: jacobi_kernel(). It applies the convolution and leverages shared memory for faster calculation.
+    For calculting norm of difference, I am using two kernels: diff_convolution() and reduction_kernel().
+

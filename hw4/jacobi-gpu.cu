@@ -107,7 +107,7 @@ double diffNorm(double* u, double* u_temp, double* f, double *d_sum, int N) {
     double ret;
     cudaMemcpy(&ret, u_temp, sizeof(double), cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
-    return ret;
+    return sqrt(ret);
 }
 
 int main(int argc, char** argv){

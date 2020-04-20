@@ -7,9 +7,11 @@ mmult:
 	nvcc -std=c++11 -o mmult mmult.cu
 
 jacobi:
-	nvcc -std=c++11 -o jacobi jacobi.cu
+	nvcc -std=c++11 -o jacobi-gpu jacobi-gpu.cu
+	g++ -std=c++11 -o jacobi-cpu jacobi-cpu.cpp -fopenmp
 
 clean:
 	rm -rf mmultvector
 	rm -rf mmult
-	rm -rf jacobi
+	rm -rf jacobi-cpu
+	rm -rf jacobi-gpu
