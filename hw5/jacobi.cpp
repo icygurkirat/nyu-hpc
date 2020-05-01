@@ -28,7 +28,7 @@ double compute_residual(double *lu, int Nl, double invhsq){
 
 int main(int argc, char * argv[]) {
     int mpirank, p, Nl, max_iters;
-    MPI_Status status, status1;
+    MPI_Status status1, status2, status3, status4;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
@@ -50,13 +50,13 @@ int main(int argc, char * argv[]) {
     }
 
     /* evaluate process indices */
-    int p_max = 1, pi = p, pj = 0;
-    while(pi > 1) {
-        pi = pi / 4;
+    int p_max = 1, rank_i = p, rank_j = 0;
+    while(rank_i > 1) {
+        rank_i = rank_i / 4;
         p_max = p_max * 2;
     }
-    pi = p % p_max;
-    pj = p / p_max;
+    rank_i = mpirank % p_max;
+    rank_j = mpirank / p_max;
 
     /* timing */
     MPI_Barrier(MPI_COMM_WORLD);
@@ -65,6 +65,8 @@ int main(int argc, char * argv[]) {
     /* Allocation of matrix, including left, right, upper and lower ghost points */
     double * lu    = (double *) calloc(sizeof(double), (Nl + 2) * (Nl + 2));
     double * lunew = (double *) calloc(sizeof(double), (Nl + 2) * (Nl + 2));
+    double * luleft = (double *) calloc(sizeof(double), Nl);
+    double * luright = (double *) calloc(sizeof(double), Nl);
     double * lutemp;
 
     double h = 1.0 / (Nl * p_max + 1);
@@ -86,19 +88,27 @@ int main(int argc, char * argv[]) {
         }
 
         /* communicate ghost values */
-        // send along x: even->right,left. odd->left,right
-        // send along y: even->top, bot. odd->bot,top
-        // if (mpirank < p - 1) {
-        //     /* If not the last process, send/recv bdry values to the right */
-        //     MPI_Send(&(lunew[lN]), 1, MPI_DOUBLE, mpirank+1, 124, MPI_COMM_WORLD);
-        //     MPI_Recv(&(lunew[lN+1]), 1, MPI_DOUBLE, mpirank+1, 123, MPI_COMM_WORLD, &status);
-        // }
-        // if (mpirank > 0) {
-        //     /* If not the first process, send/recv bdry values to the left */
-        //     MPI_Send(&(lunew[1]), 1, MPI_DOUBLE, mpirank-1, 123, MPI_COMM_WORLD);
-        //     MPI_Recv(&(lunew[0]), 1, MPI_DOUBLE, mpirank-1, 124, MPI_COMM_WORLD, &status1);
-        // }
+        /* communicate along x */
+        for(int i = 1; i <= Nl; i++) {
+            luleft[i-1] = lunew[index(i,1,Nl)];
+            luright[i-1] = lunew[index(i,Nl,Nl)];
+        }
+        MPI_Sendrecv_replace(rank_i%2==0?luright:luleft, Nl, MPI_DOUBLE, rank_i%2==0?mpirank+1:mpirank-1, 123, rank_i%2==0?mpirank+1:mpirank-1, 123, MPI_COMM_WORLD, &status1);
+        if(rank_i > 0 && rank_i < p_max-1)
+            MPI_Sendrecv_replace(rank_i%2==0?luleft:luright, Nl, MPI_DOUBLE, rank_i%2==0?mpirank-1:mpirank+1, 124, rank_i%2==0?mpirank-1:mpirank+1, 124, MPI_COMM_WORLD, &status2);
 
+        /* communicate along y */
+        MPI_Sendrecv(rank_j%2==0?&lunew[index(1,1,Nl)]:&lunew[index(Nl,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125,
+                     rank_j%2==0?&lunew[index(0,1,Nl)]:&lunew[index(Nl+1,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125, MPI_COMM_WORLD, &status3);
+        if(rank_j > 0 && rank_j < p_max-1)
+            MPI_Sendrecv(rank_j%2==0?&lunew[index(Nl,1,Nl)]:&lunew[index(1,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank-p_max:mpirank+p_max, 126,
+                         rank_j%2==0?&lunew[index(Nl+1,1,Nl)]:&lunew[index(0,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank-p_max:mpirank+p_max, 126, MPI_COMM_WORLD, &status4);
+
+        /* set the values of left and right columns */
+        for(int i = 1; i <= Nl; i++) {
+            lunew[index(i,0,Nl)] = luleft[i];
+            lunew[index(i,Nl+1,Nl)] = luright[i];
+        }
 
         /* copy newu to u using pointer flipping */
         lutemp = lu; lu = lunew; lunew = lutemp;
