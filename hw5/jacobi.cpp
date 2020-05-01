@@ -44,7 +44,7 @@ int main(int argc, char * argv[]) {
     sscanf(argv[2], "%d", &max_iters);
 
     /* check numProcs = 4^j */
-    if (!((p & (p - 1) == 0) && (p & 0x55555555 > 0))) {
+    if (!(((p & (p - 1)) == 0) && ((p & 0x55555555) > 0))) {
         printf("Exiting. p must be of the form 4^j\n");
         MPI_Abort(MPI_COMM_WORLD, 0);
     }
@@ -93,13 +93,15 @@ int main(int argc, char * argv[]) {
             luleft[i-1] = lunew[index(i,1,Nl)];
             luright[i-1] = lunew[index(i,Nl,Nl)];
         }
-        MPI_Sendrecv_replace(rank_i%2==0?luright:luleft, Nl, MPI_DOUBLE, rank_i%2==0?mpirank+1:mpirank-1, 123, rank_i%2==0?mpirank+1:mpirank-1, 123, MPI_COMM_WORLD, &status1);
+        if(p > 1)
+            MPI_Sendrecv_replace(rank_i%2==0?luright:luleft, Nl, MPI_DOUBLE, rank_i%2==0?mpirank+1:mpirank-1, 123, rank_i%2==0?mpirank+1:mpirank-1, 123, MPI_COMM_WORLD, &status1);
         if(rank_i > 0 && rank_i < p_max-1)
             MPI_Sendrecv_replace(rank_i%2==0?luleft:luright, Nl, MPI_DOUBLE, rank_i%2==0?mpirank-1:mpirank+1, 124, rank_i%2==0?mpirank-1:mpirank+1, 124, MPI_COMM_WORLD, &status2);
 
         /* communicate along y */
-        MPI_Sendrecv(rank_j%2==0?&lunew[index(1,1,Nl)]:&lunew[index(Nl,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125,
-                     rank_j%2==0?&lunew[index(0,1,Nl)]:&lunew[index(Nl+1,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125, MPI_COMM_WORLD, &status3);
+        if(p > 1)
+            MPI_Sendrecv(rank_j%2==0?&lunew[index(1,1,Nl)]:&lunew[index(Nl,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125,
+                         rank_j%2==0?&lunew[index(0,1,Nl)]:&lunew[index(Nl+1,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125, MPI_COMM_WORLD, &status3);
         if(rank_j > 0 && rank_j < p_max-1)
             MPI_Sendrecv(rank_j%2==0?&lunew[index(Nl,1,Nl)]:&lunew[index(1,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank-p_max:mpirank+p_max, 126,
                          rank_j%2==0?&lunew[index(Nl+1,1,Nl)]:&lunew[index(0,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank-p_max:mpirank+p_max, 126, MPI_COMM_WORLD, &status4);
