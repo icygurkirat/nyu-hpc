@@ -55,8 +55,8 @@ int main(int argc, char * argv[]) {
         rank_i = rank_i / 4;
         p_max = p_max * 2;
     }
-    rank_i = mpirank % p_max;
-    rank_j = mpirank / p_max;
+    rank_i = mpirank / p_max;
+    rank_j = mpirank % p_max;
 
     /* timing */
     MPI_Barrier(MPI_COMM_WORLD);
@@ -94,17 +94,17 @@ int main(int argc, char * argv[]) {
             luright[i-1] = lunew[index(i,Nl,Nl)];
         }
         if(p > 1)
-            MPI_Sendrecv_replace(rank_i%2==0?luright:luleft, Nl, MPI_DOUBLE, rank_i%2==0?mpirank+1:mpirank-1, 123, rank_i%2==0?mpirank+1:mpirank-1, 123, MPI_COMM_WORLD, &status1);
-        if(rank_i > 0 && rank_i < p_max-1)
-            MPI_Sendrecv_replace(rank_i%2==0?luleft:luright, Nl, MPI_DOUBLE, rank_i%2==0?mpirank-1:mpirank+1, 124, rank_i%2==0?mpirank-1:mpirank+1, 124, MPI_COMM_WORLD, &status2);
+            MPI_Sendrecv_replace(rank_j%2==0?luright:luleft, Nl, MPI_DOUBLE, rank_j%2==0?mpirank+1:mpirank-1, 123, rank_j%2==0?mpirank+1:mpirank-1, 123, MPI_COMM_WORLD, &status1);
+        if(rank_j > 0 && rank_j < p_max-1)
+            MPI_Sendrecv_replace(rank_j%2==0?luleft:luright, Nl, MPI_DOUBLE, rank_j%2==0?mpirank-1:mpirank+1, 124, rank_j%2==0?mpirank-1:mpirank+1, 124, MPI_COMM_WORLD, &status2);
 
         /* communicate along y */
         if(p > 1)
-            MPI_Sendrecv(rank_j%2==0?&lunew[index(1,1,Nl)]:&lunew[index(Nl,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125,
-                         rank_j%2==0?&lunew[index(0,1,Nl)]:&lunew[index(Nl+1,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank+p_max:mpirank-p_max, 125, MPI_COMM_WORLD, &status3);
-        if(rank_j > 0 && rank_j < p_max-1)
-            MPI_Sendrecv(rank_j%2==0?&lunew[index(Nl,1,Nl)]:&lunew[index(1,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank-p_max:mpirank+p_max, 126,
-                         rank_j%2==0?&lunew[index(Nl+1,1,Nl)]:&lunew[index(0,1,Nl)], Nl, MPI_DOUBLE, rank_j%2==0?mpirank-p_max:mpirank+p_max, 126, MPI_COMM_WORLD, &status4);
+            MPI_Sendrecv(rank_i%2==0?&lunew[index(1,1,Nl)]:&lunew[index(Nl,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank+p_max:mpirank-p_max, 125,
+                         rank_i%2==0?&lunew[index(0,1,Nl)]:&lunew[index(Nl+1,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank+p_max:mpirank-p_max, 125, MPI_COMM_WORLD, &status3);
+        if(rank_i > 0 && rank_i < p_max-1)
+            MPI_Sendrecv(rank_i%2==0?&lunew[index(Nl,1,Nl)]:&lunew[index(1,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank-p_max:mpirank+p_max, 126,
+                         rank_i%2==0?&lunew[index(Nl+1,1,Nl)]:&lunew[index(0,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank-p_max:mpirank+p_max, 126, MPI_COMM_WORLD, &status4);
 
         /* set the values of left and right columns */
         for(int i = 1; i <= Nl; i++) {
@@ -123,8 +123,6 @@ int main(int argc, char * argv[]) {
     }
 
     /* Clean up */
-    free(lu);
-    free(lunew);
 
     /* timing */
     MPI_Barrier(MPI_COMM_WORLD);
@@ -132,6 +130,29 @@ int main(int argc, char * argv[]) {
     if (0 == mpirank) {
         printf("Time elapsed is %f seconds.\n", elapsed);
     }
+
+
+    /* Asserting against sequential implementation */
+    int N = p_max * Nl;
+    double * lu_seq    = (double *) calloc(sizeof(double), (N + 2) * (N + 2));
+    double * lunew_seq = (double *) calloc(sizeof(double), (N + 2) * (N + 2));
+    for(int iter = 0; iter < max_iters; iter++) {
+        for(int i = 1; i <= N; i++) {
+            for(int j = 1; j <= N; j++) {
+                lunew_seq[index(i,j,N)] = (hsq + lu_seq[index(i-1,j,N)] + lu_seq[index(i+1,j,N)] + lu_seq[index(i,j-1,N)] + lu_seq[index(i,j+1,N)])/4.0;
+            }
+        }
+        lutemp = lu_seq; lu_seq = lunew_seq; lunew_seq = lutemp;
+    }
+    double maxDiff = 0;
+    for(int i = 1; i <= N; i++) {
+        for(int j = 1; j <= N; j++) {
+            maxDiff = std::max(maxDiff, std::abs(lu[index(i,j,Nl)] - lu_seq[index(i + (p_max - 1 - rank_i)*p_max, j + rank_j * p_max,N)]));
+        }
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    printf("Rank %d/%d. MaxError = %g\n", mpirank, p, maxDiff);
+    
     MPI_Finalize();
     return 0;
 }
