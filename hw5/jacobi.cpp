@@ -3,6 +3,7 @@
  * part, which has (Nl, Nl) unknowns.
  */
 #include <stdio.h>
+#include <algorithm>
 #include <math.h>
 #include <mpi.h>
 #include <string.h>
@@ -76,6 +77,8 @@ int main(int argc, char * argv[]) {
 
     /* initial residual */
     gres0 = compute_residual(lu, Nl, invhsq);
+    if(mpirank == 0)
+        printf("Iter 0: Residual: %g\n", gres0);
     gres = gres0;
 
     for (int iter = 0; iter < max_iters && gres/gres0 > tol; iter++) {
@@ -108,8 +111,10 @@ int main(int argc, char * argv[]) {
 
         /* set the values of left and right columns */
         for(int i = 1; i <= Nl; i++) {
-            lunew[index(i,0,Nl)] = luleft[i];
-            lunew[index(i,Nl+1,Nl)] = luright[i];
+            if(rank_j > 0)
+                lunew[index(i,0,Nl)] = luleft[i];
+            if(rank_j < p_max - 1)
+                lunew[index(i,Nl+1,Nl)] = luright[i];
         }
 
         /* copy newu to u using pointer flipping */
@@ -117,7 +122,7 @@ int main(int argc, char * argv[]) {
         if (0 == (iter % 10)) {
             gres = compute_residual(lu, Nl, invhsq);
             if (0 == mpirank) {
-                printf("Iter %d: Residual: %g\n", iter, gres);
+                printf("Iter %d: Residual: %g\n", iter + 1, gres);
             }
         }
     }
@@ -129,6 +134,7 @@ int main(int argc, char * argv[]) {
     double elapsed = MPI_Wtime() - tt;
     if (0 == mpirank) {
         printf("Time elapsed is %f seconds.\n", elapsed);
+        //printf("lubot=%g. lutop=%g\n", lu[index(Nl,4,Nl)], lu[index(1,4,Nl)]);
     }
 
 
