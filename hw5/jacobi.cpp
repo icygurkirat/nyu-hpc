@@ -29,7 +29,6 @@ double compute_residual(double *lu, int Nl, double invhsq){
 
 int main(int argc, char * argv[]) {
     int mpirank, p, Nl, max_iters;
-    MPI_Status status1, status2, status3, status4;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
@@ -97,24 +96,24 @@ int main(int argc, char * argv[]) {
             luright[i-1] = lunew[index(i,Nl,Nl)];
         }
         if(p > 1)
-            MPI_Sendrecv_replace(rank_j%2==0?luright:luleft, Nl, MPI_DOUBLE, rank_j%2==0?mpirank+1:mpirank-1, 123, rank_j%2==0?mpirank+1:mpirank-1, 123, MPI_COMM_WORLD, &status1);
+            MPI_Sendrecv_replace(rank_j%2==0?luright:luleft, Nl, MPI_DOUBLE, rank_j%2==0?mpirank+1:mpirank-1, 123, rank_j%2==0?mpirank+1:mpirank-1, 123, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         if(rank_j > 0 && rank_j < p_max-1)
-            MPI_Sendrecv_replace(rank_j%2==0?luleft:luright, Nl, MPI_DOUBLE, rank_j%2==0?mpirank-1:mpirank+1, 124, rank_j%2==0?mpirank-1:mpirank+1, 124, MPI_COMM_WORLD, &status2);
+            MPI_Sendrecv_replace(rank_j%2==0?luleft:luright, Nl, MPI_DOUBLE, rank_j%2==0?mpirank-1:mpirank+1, 124, rank_j%2==0?mpirank-1:mpirank+1, 124, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         /* communicate along y */
         if(p > 1)
             MPI_Sendrecv(rank_i%2==0?&lunew[index(1,1,Nl)]:&lunew[index(Nl,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank+p_max:mpirank-p_max, 125,
-                         rank_i%2==0?&lunew[index(0,1,Nl)]:&lunew[index(Nl+1,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank+p_max:mpirank-p_max, 125, MPI_COMM_WORLD, &status3);
+                         rank_i%2==0?&lunew[index(0,1,Nl)]:&lunew[index(Nl+1,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank+p_max:mpirank-p_max, 125, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         if(rank_i > 0 && rank_i < p_max-1)
             MPI_Sendrecv(rank_i%2==0?&lunew[index(Nl,1,Nl)]:&lunew[index(1,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank-p_max:mpirank+p_max, 126,
-                         rank_i%2==0?&lunew[index(Nl+1,1,Nl)]:&lunew[index(0,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank-p_max:mpirank+p_max, 126, MPI_COMM_WORLD, &status4);
+                         rank_i%2==0?&lunew[index(Nl+1,1,Nl)]:&lunew[index(0,1,Nl)], Nl, MPI_DOUBLE, rank_i%2==0?mpirank-p_max:mpirank+p_max, 126, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         /* set the values of left and right columns */
         for(int i = 1; i <= Nl; i++) {
             if(rank_j > 0)
-                lunew[index(i,0,Nl)] = luleft[i];
+                lunew[index(i,0,Nl)] = luleft[i-1];
             if(rank_j < p_max - 1)
-                lunew[index(i,Nl+1,Nl)] = luright[i];
+                lunew[index(i,Nl+1,Nl)] = luright[i-1];
         }
 
         /* copy newu to u using pointer flipping */
@@ -134,7 +133,6 @@ int main(int argc, char * argv[]) {
     double elapsed = MPI_Wtime() - tt;
     if (0 == mpirank) {
         printf("Time elapsed is %f seconds.\n", elapsed);
-        //printf("lubot=%g. lutop=%g\n", lu[index(Nl,4,Nl)], lu[index(1,4,Nl)]);
     }
 
 
@@ -151,13 +149,13 @@ int main(int argc, char * argv[]) {
         lutemp = lu_seq; lu_seq = lunew_seq; lunew_seq = lutemp;
     }
     double maxDiff = 0;
-    for(int i = 1; i <= N; i++) {
-        for(int j = 1; j <= N; j++) {
-            maxDiff = std::max(maxDiff, std::abs(lu[index(i,j,Nl)] - lu_seq[index(i + (p_max - 1 - rank_i)*p_max, j + rank_j * p_max,N)]));
+    for(int i = 1; i <= Nl; i++) {
+        for(int j = 1; j <= Nl; j++) {
+            maxDiff = std::max(maxDiff, std::abs(lu[index(i,j,Nl)] - lu_seq[index(i + (p_max - 1 - rank_i) * Nl, j + rank_j * Nl, N)]));
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("Rank %d/%d. MaxError = %g\n", mpirank, p, maxDiff);
+    printf("Rank %d/%d. MaxError wrt sequential = %g\n", mpirank, p, maxDiff);
     
     MPI_Finalize();
     return 0;
