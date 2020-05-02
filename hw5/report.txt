@@ -1,0 +1,84 @@
+1. MPI-parallel jacobi with blocking send/recv: jacobi.cpp
+   MPI-parallel jacobi with non-blocking send/recv: jacobinb.cpp
+
+   Command line arguments: Nl, number_of_iterations.
+
+   To get the timing values, I have removed the extra printing statements in the iteration loop.
+   I also compare the result of each process to a sequential implementation for validating that the parallel result is correct. That time is not included in the simulation time.
+
+   All the simulations are run on Intel(R) IvyBridge @ 3.00GHz
+
+
+   Simulation 1.1: Weak scaling with Nl = 100, iterations = 5000. All tasks belong to separate nodes i.e. Tasks per node = 1
+   Tasks            N=sqrt(Tasks)*Nl            Jacobi          Jacobi-NonBlocking
+   1                100                         0.385691s       0.385335s
+   4                200                         0.645569s       0.473397s
+   16               400                         0.817367s       0.576030s
+
+   Simulation 1.2: Weak scaling with Nl = 100, iterations = 5000. Tasks per node = 4, and hence there is less communication across network required
+   Tasks            N=sqrt(Tasks)*Nl            Jacobi          Jacobi-NonBlocking
+   4                200                         0.438185s       0.409364s
+   16               400                         0.725007s       0.548178s
+   64               800                         2.286943s       3.211810s
+
+   Simulation 1.3: Nl = 100, iterations = 5000. Tasks per node = 16
+   Tasks            N=sqrt(Tasks)*Nl            Jacobi          Jacobi-NonBlocking
+   64               800                         
+   256              1600
+
+   Whenever N is doubled, the problem size increases by 4 times. From the data above, we can see that parallel implementation provides some speedup because 
+   on doubling of N, the time for execution is not increased 4 times. But for the algorithm to be perfectly weakly scalable, this time should remain same.
+   Hence, the non-blocking jacobi has better weak scalability as compared to blocking jacobi because time values remain fairly similar.
+
+   Time also increases significantly when world size >= 64 tasks.
+
+
+
+
+   Simulation 2: Strong scaling with N = 40000, iterations = 100.
+   Tasks            TasksPerNode                Nl                  Jacobi              Jacobi-NonBlocking
+   1                1                           40000
+   4                4                           20000
+   16               4                           10000
+   64               8                           5000
+   256              16                          2500
+
+
+
+
+
+2. SSORT
+
+   N=10000
+   Tasks            nodes           tasksPerNode
+   1                1               1
+   2                2               1
+   4                4               1
+   8                4               2    
+   16               8               2
+   32               8               4
+   64               16              4
+   128              16              8
+
+   N=100000
+   Tasks            nodes           tasksPerNode
+   1                1               1
+   2                2               1
+   4                4               1
+   8                4               2    
+   16               8               2
+   32               8               4
+   64               16              4
+   128              16              8
+
+   N=1000000
+   Tasks            nodes           tasksPerNode
+   1                1               1
+   2                2               1
+   4                4               1
+   8                4               2    
+   16               8               2
+   32               8               4
+   64               16              4
+   128              16              8
+
