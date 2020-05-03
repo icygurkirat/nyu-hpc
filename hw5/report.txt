@@ -64,8 +64,8 @@
    4                1               4                       0.001202s
    8                1               8                       0.001068s
    16               1               16                      0.001283s
-   32               2               16
-   64               4               16
+   32               2               16                      0.009226s
+   64               4               16                      0.031584s
 
    Simulation 2: N=100000
    Tasks            nodes           tasksPerNode            Time
@@ -74,8 +74,8 @@
    4                1               4                       0.012237s
    8                1               8                       0.011387s
    16               1               16                      0.012273s
-   32               2               16
-   64               4               16
+   32               2               16                      0.024199s
+   64               4               16                      0.044038s
 
    Simulation 3: N=1000000
    Tasks            nodes           tasksPerNode            Time
@@ -84,7 +84,8 @@
    4                1               4                       0.134323s
    8                1               8                       0.122005s
    16               1               16                      0.115205s
-   32               2               16
-   64               4               16
+   32               2               16                      0.171403s            
+   64               4               16                      0.223539s
 
    There is a very long waiting period when you need more than 16 nodes. Hence I couldn't collect more data points.
+   From this data it is clear that there is a sudden jump in time when the tasks go beyond one node, and so the communication cost becomes high.
