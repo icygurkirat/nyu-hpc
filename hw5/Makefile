@@ -10,5 +10,7 @@ all : $(TARGETS)
 
 clean:
 	-$(RM) $(TARGETS) *~
+	-$(RM) *.out
+	-$(RM) output*.txt
 
 .PHONY: all, clean
