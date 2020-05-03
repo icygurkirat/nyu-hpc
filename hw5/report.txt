@@ -52,7 +52,7 @@
 2. Sample sort. File = ssort.cpp
    Accepts a command line argument N, for number of elements per partition. Default value = 100.
    I have followed the exact steps mentioned in the comments of original file.
-   As an extra check I am printing the max_value, and size of each subarray to verify that subarray of partition i < subarray of partition i+1.
+   As an extra check I am printing the range of data, and size of each subarray to verify that subarray of partition i < subarray of partition i+1.
 
 
    All the simulations are run on Intel(R) Broadwell @ 2.60GHz
@@ -60,30 +60,30 @@
    Simulation 1: N=10000
    Tasks            nodes           tasksPerNode            Time
    1                1               1                       0.000587s
-   2                1               2
-   4                1               4
-   8                1               8    
-   16               1               16
+   2                1               2                       0.001689s
+   4                1               4                       0.001202s
+   8                1               8                       0.001068s
+   16               1               16                      0.001283s
    32               2               16
    64               4               16
 
    Simulation 2: N=100000
    Tasks            nodes           tasksPerNode            Time
    1                1               1                       0.007454s
-   2                1               2
-   4                1               4
-   8                1               8    
-   16               1               16
+   2                1               2                       0.014520s
+   4                1               4                       0.012237s
+   8                1               8                       0.011387s
+   16               1               16                      0.012273s
    32               2               16
    64               4               16
 
    Simulation 3: N=1000000
    Tasks            nodes           tasksPerNode            Time
    1                1               1                       0.082439s
-   2                1               2
-   4                1               4
-   8                1               8    
-   16               1               16
+   2                1               2                       0.179690s
+   4                1               4                       0.134323s
+   8                1               8                       0.122005s
+   16               1               16                      0.115205s
    32               2               16
    64               4               16
 

@@ -78,8 +78,8 @@ int main( int argc, char *argv[]) {
     int* recvDisp = (int*)malloc(sizeof(int)*p);
     sendDisp[0] = recvDisp[0] = 0;
     for(int i = 1; i < p; i++) {
-        sendDisp[i] = sendCount[i-1];
-        recvDisp[i] = recvCount[i-1];
+        sendDisp[i] = sendDisp[i-1] + sendCount[i-1];
+        recvDisp[i] = recvDisp[i-1] + recvCount[i-1];
     }
 
     MPI_Alltoallv(vec, sendCount, sendDisp, MPI_INTEGER, vec2, recvCount, recvDisp, MPI_INTEGER, MPI_COMM_WORLD);
@@ -97,17 +97,7 @@ int main( int argc, char *argv[]) {
     }
 
     // Assert the correct ordering
-    bool flag = false;
-    for(int i = 1; i < N2; i++) {
-        if(vec2[i] < vec2[i-1]){
-            flag = true;
-            break;
-        }
-    }
-    if(flag)
-        printf("Rank %d/%d: ASSERTION_FAILURE. PartitionSize = %d\n", rank, p, N2);
-    else
-        printf("Rank %d/%d: ASSERTION_SUCCESSFUL. MaxValue = %d. PartitionSize = %d\n", rank, p, vec2[N2-1], N2);
+    printf("Rank %d/%d: Range = (%d,%d). PartitionSize = %d\n", rank, p, vec2[0], vec2[N2-1], N2);
 
 
     // Write output to a file
