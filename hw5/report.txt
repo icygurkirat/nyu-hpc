@@ -6,7 +6,7 @@
    To get the timing values, I have removed the extra printing statements in the iteration loop.
    I also compare the result of each process to a sequential implementation for validating that the parallel result is correct. That time is not included in the simulation time.
 
-   All the simulations are run on Intel(R) IvyBridge @ 3.00GHz
+   Weak scaling simulations are run on Intel(R) IvyBridge @ 3.00GHz
 
 
    Simulation 1.1: Weak scaling with Nl = 100, iterations = 5000. All tasks belong to separate nodes i.e. Tasks per node = 1
@@ -23,7 +23,7 @@
 
    Simulation 1.3: Nl = 100, iterations = 5000. Tasks per node = 16
    Tasks            N=sqrt(Tasks)*Nl            Jacobi          Jacobi-NonBlocking
-   64               800                         0.888407s                   
+   64               800                         0.888407s       0.799347s          
 
    Whenever N is doubled, the problem size increases by 4 times. From the data above, we can see that parallel implementation provides some speedup because 
    on doubling of N, the time for execution is not increased 4 times. But for the algorithm to be perfectly weakly scalable, this time should remain same.
@@ -34,53 +34,57 @@
 
 
 
-   Simulation 2: Strong scaling with N = 40000, iterations = 100.
-   Tasks            TasksPerNode                Nl                  Jacobi              Jacobi-NonBlocking
-   1                1                           40000
-   4                4                           20000
-   16               8                           10000
-   64               16                          5000
-   256              16                          2500
+   The strong scaling simulations are run on Intel(R) Broadwell @ 2.60GHz
+   Simulation 2: Strong scaling with N = 20000, iterations = 100.
+   Tasks            TasksPerNode                Nl                   Jacobi               Jacobi-NonBlocking         Speedup(of blocking jacobi)
+   1                1                           20000                127.174853s          122.001996s                - 
+   4                4                           10000                26.390795s           26.030267s                 4.81               
+   16               8                           5000                 9.983777s            10.071566s                 12.74             
+   64               16                          2500                 3.096899s            3.172177s                  41.06  
+   256              16                          1250                 
+
+   For large N values, non-blocking jacobi does not provide a very big advantage over blocking jacobi.
 
 
 
 
 
 2. Sample sort. File = ssort.cpp
+   Accepts a command line argument N, for number of elements per partition. Default value = 100.
    I have followed the exact steps mentioned in the comments of original file.
    As an extra check I am printing the max_value, and size of each subarray to verify that subarray of partition i < subarray of partition i+1.
 
 
-   N=10000
-   Tasks            nodes           tasksPerNode
-   1                1               1
+   All the simulations are run on Intel(R) Broadwell @ 2.60GHz
+   
+   Simulation 1: N=10000
+   Tasks            nodes           tasksPerNode            Time
+   1                1               1                       0.000587s
    2                1               2
    4                1               4
    8                1               8    
    16               1               16
    32               2               16
    64               4               16
-   128              8               16
 
-   N=100000
-   Tasks            nodes           tasksPerNode
-   1                1               1
+   Simulation 2: N=100000
+   Tasks            nodes           tasksPerNode            Time
+   1                1               1                       0.007454s
    2                1               2
    4                1               4
    8                1               8    
    16               1               16
    32               2               16
    64               4               16
-   128              8               16
 
-   N=1000000
-   Tasks            nodes           tasksPerNode
-   1                1               1
+   Simulation 3: N=1000000
+   Tasks            nodes           tasksPerNode            Time
+   1                1               1                       0.082439s
    2                1               2
    4                1               4
    8                1               8    
    16               1               16
    32               2               16
    64               4               16
-   128              8               16
 
+   There is a very long waiting period when you need more than 16 nodes. Hence I couldn't collect more data points.
